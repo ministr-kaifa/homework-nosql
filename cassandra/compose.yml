@@ -1,0 +1,7 @@
+services:
+  cassandra:
+    image: cassandra
+    ports:
+      - 9042:9042
+    volumes:
+      - ./casandra-data:/var/lib/cassandra
