@@ -4,11 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Objects;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.List;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -30,9 +26,7 @@ public class RateLimiter {
   public boolean pass() {
     var windowStart = Instant.ofEpochMilli(Instant.now().toEpochMilli() - timeWindowSeconds * 1_000);
     var inWindowRequestsTime = 
-      Stream.ofNullable(redis.lpop(label, (int)maxRequestCount))
-        .flatMap(List::stream)
-        .takeWhile(Objects::nonNull)
+      redis.lrange(label, 0, maxRequestCount - 1).stream()
         .map(Instant::parse)
         .filter(requestTime -> requestTime.isAfter(windowStart))
         .map(Instant::toString)
@@ -40,10 +34,8 @@ public class RateLimiter {
 
     var isLocked = inWindowRequestsTime.size() >= maxRequestCount;
     if(!isLocked) {
-      inWindowRequestsTime.add(Instant.now().toString());
-    }
-    if(inWindowRequestsTime.size() > 0) {
-      redis.lpush(label, inWindowRequestsTime.toArray(new String[0]));
+      redis.lpush(label, Instant.now().toString());
+      redis.ltrim(label, 0, maxRequestCount - 1);
     }
     return !isLocked;
   }
