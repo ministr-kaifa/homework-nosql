@@ -4,8 +4,11 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.List;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -25,21 +28,24 @@ public class RateLimiter {
   }
 
   public boolean pass() {
-    var lastRequestsTime = 
-      Stream.generate(() -> redis.lpop(label))
-        .takeWhile(val -> Objects.nonNull(val))
-        .limit(maxRequestCount)
-        .map(listValue -> Instant.parse(listValue))
-        .filter(instant -> instant.isAfter(Instant.ofEpochMilli(Instant.now().toEpochMilli() - timeWindowSeconds * 1_000)))
-        .toList();
-    //хотел сделать через .peek() но не придумал как
-    lastRequestsTime.forEach(requestTime -> redis.lpush(label, requestTime.toString()));
-    if(lastRequestsTime.size() < maxRequestCount) {
-      redis.lpush(label, Instant.now().toString());
-      return true;
-    } else {
-      return false;
+    var windowStart = Instant.ofEpochMilli(Instant.now().toEpochMilli() - timeWindowSeconds * 1_000);
+    var inWindowRequestsTime = 
+      Stream.ofNullable(redis.lpop(label, (int)maxRequestCount))
+        .flatMap(List::stream)
+        .takeWhile(Objects::nonNull)
+        .map(Instant::parse)
+        .filter(requestTime -> requestTime.isAfter(windowStart))
+        .map(Instant::toString)
+        .collect(Collectors.toList());
+
+    var isLocked = inWindowRequestsTime.size() >= maxRequestCount;
+    if(!isLocked) {
+      inWindowRequestsTime.add(Instant.now().toString());
     }
+    if(inWindowRequestsTime.size() > 0) {
+      redis.lpush(label, inWindowRequestsTime.toArray(new String[0]));
+    }
+    return !isLocked;
   }
 
   public static void main(String[] args) {

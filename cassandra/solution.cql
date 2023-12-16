@@ -19,9 +19,10 @@ CREATE TABLE IF NOT EXISTS homework.topic_posts
   username   text,
   topic_id   int,
   content    text,
-  created_at timestamp,
-  PRIMARY KEY(topic_id, created_at)
-) WITH CLUSTERING ORDER BY (created_at DESC);
+  created_at_time time,
+  created_at_date date,
+  PRIMARY KEY((topic_id, created_at_date), created_at_time)
+) WITH CLUSTERING ORDER BY (created_at_time DESC);
 
 INSERT INTO homework.user_posts
   (post_id, user_id, username, topic_id, content, created_at) 
@@ -51,44 +52,44 @@ VALUES
 
 
 INSERT INTO homework.topic_posts
-  (post_id, user_id, username, topic_id, content, created_at) 
+  (post_id, user_id, username, topic_id, content, created_at_date, created_at_time) 
 VALUES
-  (1, 1, 'user1', 1, 'post content', '2023-12-15 12:00:00');
+  (1, 1, 'user1', 1, 'post content', '2023-12-15', '12:00:00');
 
 INSERT INTO homework.topic_posts
-  (post_id, user_id, username, topic_id, content, created_at) 
+  (post_id, user_id, username, topic_id, content, created_at_date, created_at_time) 
 VALUES
-  (2, 1, 'user1', 1, 'post content', '2023-12-15 15:00:00');
+  (2, 1, 'user1', 1, 'post content', '2023-12-15', '15:00:00');
 
 INSERT INTO homework.topic_posts
-  (post_id, user_id, username, topic_id, content, created_at) 
+  (post_id, user_id, username, topic_id, content, created_at_date, created_at_time) 
 VALUES
-  (3, 1, 'user1', 1, 'post content', '2023-12-15 15:01:00');
+  (3, 1, 'user1', 1, 'post content', '2023-12-15', '15:01:00');
 
 INSERT INTO homework.topic_posts
-  (post_id, user_id, username, topic_id, content, created_at) 
+  (post_id, user_id, username, topic_id, content, created_at_date, created_at_time) 
 VALUES
-  (4, 1, 'user1', 1, 'post content', '2023-12-18 20:00:00');
+  (4, 1, 'user1', 1, 'post content', '2023-12-18', '20:00:00');
 
 INSERT INTO homework.topic_posts
-  (post_id, user_id, username, topic_id, content, created_at) 
+  (post_id, user_id, username, topic_id, content, created_at_date, created_at_time) 
 VALUES
-  (5, 1, 'user1', 1, 'post content', '2023-12-18 21:00:00');
+  (5, 1, 'user1', 1, 'post content', '2023-12-18', '21:00:00');
 
 INSERT INTO homework.topic_posts
-  (post_id, user_id, username, topic_id, content, created_at) 
+  (post_id, user_id, username, topic_id, content, created_at_date, created_at_time) 
 VALUES
-  (6, 1, 'user1', 1, 'post content', '2023-12-18 18:00:00');
+  (6, 1, 'user1', 1, 'post content', '2023-12-18', '18:00:00');
 
 INSERT INTO homework.topic_posts
-  (post_id, user_id, username, topic_id, content, created_at) 
+  (post_id, user_id, username, topic_id, content, created_at_date, created_at_time) 
 VALUES
-  (7, 2, 'user2', 1, 'post content', '2023-12-18 19:00:00');
+  (7, 2, 'user2', 1, 'post content', '2023-12-18', '19:00:00');
 
 INSERT INTO homework.topic_posts
-  (post_id, user_id, username, topic_id, content, created_at) 
+  (post_id, user_id, username, topic_id, content, created_at_date, created_at_time) 
 VALUES
-  (8, 2, 'user2', 1, 'post content', '2023-12-19 00:00:00');
+  (8, 2, 'user2', 1, 'post content', '2023-12-19', '00:00:00');
 
 
 -- Запрос, который бы доставал посты заданного пользователя упорядоченные
@@ -138,9 +139,8 @@ SELECT
   user_id,
   username,
   post_id,
-  created_at
+  created_at_time
 FROM 
   homework.topic_posts
 WHERE topic_id = 1
-  AND created_at > '2023-12-18'
-  AND created_at < '2023-12-19';
+  AND created_at_date = '2023-12-18';
