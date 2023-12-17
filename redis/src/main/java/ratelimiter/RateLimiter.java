@@ -23,17 +23,12 @@ public class RateLimiter {
   }
 
   public boolean pass() {
-    var windowStart = Instant.ofEpochMilli(Instant.now().toEpochMilli() - timeWindowSeconds * 1_000);
-    var inWindowRequestsAmount = 
-      redis.lrange(label, 0, maxRequestCount - 1).stream()
-        .map(Instant::parse)
-        .filter(requestTime -> requestTime.isAfter(windowStart))
-        .map(Instant::toString)
-        .count();
+    var now = Instant.now().toEpochMilli();
+    var windowStart = now - timeWindowSeconds * 1_000;
 
-    if(inWindowRequestsAmount < maxRequestCount) {
-      redis.lpush(label, Instant.now().toString());
-      redis.ltrim(label, 0, maxRequestCount - 1);
+    if(redis.zcount(label, windowStart, now) < maxRequestCount) {
+      redis.zadd(label, now, String.valueOf(now));
+      redis.zremrangeByScore(label, 0, windowStart);
       return true;
     }
     return false;
