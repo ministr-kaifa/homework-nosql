@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.time.Instant;
+
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
@@ -22,7 +23,14 @@ public class RateLimiter {
   }
 
   public boolean pass() {
-    // TODO: Implementation
+    var now = Instant.now().toEpochMilli();
+    var windowStart = now - timeWindowSeconds * 1_000;
+
+    if(redis.zcount(label, windowStart, now) < maxRequestCount) {
+      redis.zadd(label, now, String.valueOf(now));
+      redis.zremrangeByScore(label, 0, windowStart);
+      return true;
+    }
     return false;
   }
 
